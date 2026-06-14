@@ -7,7 +7,7 @@ import random
 # -----------------------------
 
 SUPABASE_URL = "https://zmauhcorzekczvywmmvp.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYXVoY29yemVrY3p2eXdtbXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODUxODIsImV4cCI6MjA5Njk2MTE4Mn0.r6NOWNdZVSwg4NgYAdPkfttUrRbP4IesfcBmbVLXIfc"
+SUPABASE_KEY = "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYXVoY29yemVrY3p2eXdtbXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODUxODIsImV4cCI6MjA5Njk2MTE4Mn0"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -70,7 +70,7 @@ competences = {
     "exploratory_thinking": "Generating new ideas.",
     "political_agency": "Engaging with governance and policy.",
     "collective_action": "Working together toward goals.",
-    "individual_initiative": "Taking personal responsibility."
+    "individual_initiative": "Taking responsibility individually."
 }
 
 # -----------------------------
@@ -79,22 +79,28 @@ competences = {
 
 st.set_page_config(page_title="GreenComp Quiz", layout="wide")
 
-st.title("🌱 GreenComp Keyword Classification Tool")
+st.title("🌱 GreenComp Classification Tool")
 
 # -----------------------------
-# PARTICIPANT ID (FIXED)
+# PARTICIPANT START (FIXED)
 # -----------------------------
 
 if "participant_id" not in st.session_state:
     st.session_state.participant_id = ""
 
-st.session_state.participant_id = st.text_input(
-    "Enter participant ID",
-    value=st.session_state.participant_id
-)
+if st.session_state.participant_id == "":
+    st.subheader("Start experiment")
 
-if st.session_state.participant_id.strip() == "":
-    st.warning("Please enter a participant ID to continue.")
+    input_id = st.text_input("Enter participant ID (e.g. p1, john_01)")
+
+    if st.button("Start quiz"):
+
+        if input_id.strip() == "":
+            st.error("Please enter a valid participant ID")
+        else:
+            st.session_state.participant_id = input_id
+            st.rerun()
+
     st.stop()
 
 # -----------------------------
@@ -114,6 +120,17 @@ i = st.session_state.i
 total = len(st.session_state.order)
 
 # -----------------------------
+# RESET ON NEW QUESTION
+# -----------------------------
+
+if "last_i" not in st.session_state:
+    st.session_state.last_i = -1
+
+if st.session_state.last_i != i:
+    st.session_state.selected = None
+    st.session_state.last_i = i
+
+# -----------------------------
 # SIDEBAR PROGRESS
 # -----------------------------
 
@@ -121,7 +138,7 @@ st.sidebar.header("Progress")
 st.sidebar.progress(i / total)
 st.sidebar.write(f"{i} / {total}")
 
-if st.sidebar.button("Reset session"):
+if st.sidebar.button("Reset"):
     st.session_state.i = 0
     st.session_state.selected = None
     st.session_state.order = random.sample(keywords, len(keywords))
@@ -149,17 +166,6 @@ st.divider()
 st.markdown("## Choose the best matching competence")
 
 # -----------------------------
-# RESET SELECTION EACH QUESTION
-# -----------------------------
-
-if "last_i" not in st.session_state:
-    st.session_state.last_i = -1
-
-if st.session_state.last_i != i:
-    st.session_state.selected = None
-    st.session_state.last_i = i
-
-# -----------------------------
 # SELECTION UI
 # -----------------------------
 
@@ -177,14 +183,14 @@ for comp, desc in competences.items():
 st.divider()
 
 # -----------------------------
-# NOT SURE
+# NOT SURE OPTION
 # -----------------------------
 
 if st.button("🤷 I’m not sure"):
     st.session_state.selected = "unknown"
 
 # -----------------------------
-# SUBMIT TO SUPABASE
+# SUBMIT
 # -----------------------------
 
 if st.session_state.selected:
