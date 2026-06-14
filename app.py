@@ -59,30 +59,30 @@ keywords = [
 ]
 
 competences = {
-    "valuing_sustainability": "Recognising sustainability for people and planet.",
-    "supporting_fairness": "Promoting equity, justice, inclusion.",
-    "promoting_nature": "Protecting natural systems and biodiversity.",
-    "systems_thinking": "Understanding interconnected systems.",
-    "critical_thinking": "Evaluating information and evidence.",
-    "problem_framing": "Defining complex problems.",
-    "futures_literacy": "Thinking about future consequences.",
-    "adaptability": "Handling change and uncertainty.",
-    "exploratory_thinking": "Generating new ideas.",
-    "political_agency": "Engaging with governance and policy.",
-    "collective_action": "Working together toward goals.",
-    "individual_initiative": "Taking responsibility individually."
+    "valuing_sustainability": "Sustainability values",
+    "supporting_fairness": "Fairness & inclusion",
+    "promoting_nature": "Nature & biodiversity",
+    "systems_thinking": "Systems thinking",
+    "critical_thinking": "Critical thinking",
+    "problem_framing": "Problem framing",
+    "futures_literacy": "Future thinking",
+    "adaptability": "Adaptability",
+    "exploratory_thinking": "Creativity & innovation",
+    "political_agency": "Policy & governance",
+    "collective_action": "Collaboration",
+    "individual_initiative": "Individual action"
 }
 
 # -----------------------------
 # PAGE SETUP
 # -----------------------------
 
-st.set_page_config(page_title="GreenComp Quiz", layout="wide")
+st.set_page_config(page_title="GreenComp Study", layout="wide")
 
 st.title("🌱 GreenComp Classification Tool")
 
 # -----------------------------
-# PARTICIPANT START (FIXED)
+# PARTICIPANT FLOW (FIXED)
 # -----------------------------
 
 if "participant_id" not in st.session_state:
@@ -91,14 +91,13 @@ if "participant_id" not in st.session_state:
 if st.session_state.participant_id == "":
     st.subheader("Start experiment")
 
-    input_id = st.text_input("Enter participant ID (e.g. p1, john_01)")
+    pid_input = st.text_input("Enter participant ID (e.g. p1, john_01)")
 
     if st.button("Start quiz"):
-
-        if input_id.strip() == "":
+        if pid_input.strip() == "":
             st.error("Please enter a valid participant ID")
         else:
-            st.session_state.participant_id = input_id
+            st.session_state.participant_id = pid_input
             st.rerun()
 
     st.stop()
@@ -116,11 +115,14 @@ if "i" not in st.session_state:
 if "selected" not in st.session_state:
     st.session_state.selected = None
 
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
+
 i = st.session_state.i
 total = len(st.session_state.order)
 
 # -----------------------------
-# RESET ON NEW QUESTION
+# RESET SELECTION PER QUESTION
 # -----------------------------
 
 if "last_i" not in st.session_state:
@@ -128,10 +130,11 @@ if "last_i" not in st.session_state:
 
 if st.session_state.last_i != i:
     st.session_state.selected = None
+    st.session_state.submitted = False
     st.session_state.last_i = i
 
 # -----------------------------
-# SIDEBAR PROGRESS
+# PROGRESS
 # -----------------------------
 
 st.sidebar.header("Progress")
@@ -141,6 +144,7 @@ st.sidebar.write(f"{i} / {total}")
 if st.sidebar.button("Reset"):
     st.session_state.i = 0
     st.session_state.selected = None
+    st.session_state.submitted = False
     st.session_state.order = random.sample(keywords, len(keywords))
     st.rerun()
 
@@ -149,11 +153,11 @@ if st.sidebar.button("Reset"):
 # -----------------------------
 
 if i >= total:
-    st.success("🎉 You completed the classification!")
+    st.success("🎉 Finished!")
     st.stop()
 
 # -----------------------------
-# CURRENT QUESTION
+# QUESTION
 # -----------------------------
 
 keyword = st.session_state.order[i]
@@ -163,7 +167,7 @@ st.markdown(f"### **{keyword}**")
 
 st.divider()
 
-st.markdown("## Choose the best matching competence")
+st.markdown("## Choose competence")
 
 # -----------------------------
 # SELECTION UI
@@ -175,6 +179,7 @@ for comp, desc in competences.items():
     with col1:
         if st.button("Select", key=f"{comp}_{i}"):
             st.session_state.selected = comp
+            st.session_state.submitted = False
 
     with col2:
         st.markdown(f"### {comp}")
@@ -183,17 +188,18 @@ for comp, desc in competences.items():
 st.divider()
 
 # -----------------------------
-# NOT SURE OPTION
+# NOT SURE
 # -----------------------------
 
 if st.button("🤷 I’m not sure"):
     st.session_state.selected = "unknown"
+    st.session_state.submitted = False
 
 # -----------------------------
-# SUBMIT
+# SUBMIT (FIXED FLOW)
 # -----------------------------
 
-if st.session_state.selected:
+if st.session_state.selected and not st.session_state.submitted:
 
     if st.button("Submit answer"):
 
@@ -204,8 +210,10 @@ if st.session_state.selected:
                 "assigned": st.session_state.selected
             }).execute()
 
+            st.session_state.submitted = True
             st.session_state.i += 1
             st.session_state.selected = None
+
             st.rerun()
 
         except Exception as e:
