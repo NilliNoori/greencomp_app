@@ -7,7 +7,7 @@ import random
 # -----------------------------
 
 SUPABASE_URL = "https://zmauhcorzekczvywmmvp.supabase.co"
-SUPABASE_KEY = "YOUR_ANON_KEY"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYXVoY29yemVrY3p2eXdtbXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODUxODIsImV4cCI6MjA5Njk2MTE4Mn0.r6NOWNdZVSwg4NgYAdPkfttUrRbP4IesfcBmbVLXIfc"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
