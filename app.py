@@ -6,7 +6,7 @@ import random
 # SUPABASE SETUP
 # -----------------------------
 
-SUPABASE_URL = "https://zmauhcorzekczvywmmvp.supabase.co"
+SUPABASE_URL = "https://zmauhcorzekczvywmmvp.supabase.co/rest/v1/responses"
 SUPABASE_KEY = "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYXVoY29yemVrY3p2eXdtbXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODUxODIsImV4cCI6MjA5Njk2MTE4Mn0"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
