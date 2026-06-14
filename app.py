@@ -1,7 +1,19 @@
+from supabase import create_client
 import streamlit as st
 import pandas as pd
 import os
 import random
+
+SUPABASE_URL = "https://zmauhcorzekczvywmmvp.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYXVoY29yemVrY3p2eXdtbXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODUxODIsImV4cCI6MjA5Njk2MTE4Mn0.r6NOWNdZVSwg4NgYAdPkfttUrRbP4IesfcBmbVLXIfc"
+
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+if "participant_id" not in st.session_state:
+    st.session_state.participant_id = st.text_input("Enter participant ID")
+
+if not st.session_state.participant_id:
+    st.stop()
 
 # -----------------------------
 # DATA
@@ -158,23 +170,18 @@ if st.button("🤷 I’m not sure"):
 # -----------------------------
 
 if selected:
-    row = pd.DataFrame([[keyword, selected]], columns=["keyword", "assigned"])
+    try:
+        supabase.table("responses").insert({
+            "keyword": keyword,
+            "assigned": selected,
+            "participant_id": st.session_state.get("participant_id", "unknown")
+        }).execute()
 
-    if os.path.exists("results.csv"):
-        old = pd.read_csv("results.csv")
-        df = pd.concat([old, row], ignore_index=True)
-    else:
-        df = row
+        st.session_state.i += 1
+        st.rerun()
 
-    df.to_csv("results.csv", index=False)
+    except Exception as e:
+        st.error(f"Error saving to Supabase: {e}")
+        
 
-    st.session_state.i += 1
-    st.rerun()
 
-# -----------------------------
-# DEBUG (optional)
-# -----------------------------
-
-with st.expander("View raw data"):
-    if os.path.exists("results.csv"):
-        st.dataframe(pd.read_csv("results.csv"))
