@@ -1,15 +1,7 @@
-from supabase import create_client
 import streamlit as st
+import pandas as pd
+import os
 import random
-
-# -----------------------------
-# SUPABASE SETUP
-# -----------------------------
-
-SUPABASE_URL = "https://zmauhcorzekczvywmmvp.supabase.co/rest/v1/responses"
-SUPABASE_KEY = "eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYXVoY29yemVrY3p2eXdtbXZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEzODUxODIsImV4cCI6MjA5Njk2MTE4Mn0"
-
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # -----------------------------
 # DATA
@@ -59,93 +51,54 @@ keywords = [
 ]
 
 competences = {
-    "valuing_sustainability": "Sustainability values",
-    "supporting_fairness": "Fairness & inclusion",
-    "promoting_nature": "Nature & biodiversity",
-    "systems_thinking": "Systems thinking",
-    "critical_thinking": "Critical thinking",
-    "problem_framing": "Problem framing",
-    "futures_literacy": "Future thinking",
-    "adaptability": "Adaptability",
-    "exploratory_thinking": "Creativity & innovation",
-    "political_agency": "Policy & governance",
-    "collective_action": "Collaboration",
-    "individual_initiative": "Individual action"
+    "valuing_sustainability": "Recognising the importance of sustainability for people and planet.",
+    "supporting_fairness": "Promoting equity, justice, and inclusion in society.",
+    "promoting_nature": "Understanding and protecting natural systems and biodiversity.",
+    "systems_thinking": "Seeing how elements are interconnected within complex systems.",
+    "critical_thinking": "Evaluating information and evidence to form reasoned judgments.",
+    "problem_framing": "Defining and structuring complex sustainability problems.",
+    "futures_literacy": "Thinking about long-term consequences and possible futures.",
+    "adaptability": "Adapting to change and uncertainty in dynamic environments.",
+    "exploratory_thinking": "Generating new ideas through creativity and experimentation.",
+    "political_agency": "Engaging with policies, governance, and societal rules.",
+    "collective_action": "Working together with others toward shared goals.",
+    "individual_initiative": "Taking responsibility and proactive action individually."
 }
 
 # -----------------------------
-# PAGE SETUP
+# SETUP
 # -----------------------------
 
-st.set_page_config(page_title="GreenComp Study", layout="wide")
+st.set_page_config(page_title="GreenComp Quiz", layout="wide")
 
-st.title("🌱 GreenComp Classification Tool")
-
-# -----------------------------
-# PARTICIPANT FLOW (FIXED)
-# -----------------------------
-
-if "participant_id" not in st.session_state:
-    st.session_state.participant_id = ""
-
-if st.session_state.participant_id == "":
-    st.subheader("Start experiment")
-
-    pid_input = st.text_input("Enter participant ID (e.g. p1, john_01)")
-
-    if st.button("Start quiz"):
-        if pid_input.strip() == "":
-            st.error("Please enter a valid participant ID")
-        else:
-            st.session_state.participant_id = pid_input
-            st.rerun()
-
-    st.stop()
+st.title("🌱 GreenComp Keyword Classification Tool")
 
 # -----------------------------
-# SESSION STATE INIT
+# SESSION STATE
 # -----------------------------
 
 if "order" not in st.session_state:
-    st.session_state.order = random.sample(keywords, len(keywords))
+    random.shuffle(keywords)
+    st.session_state.order = keywords
 
 if "i" not in st.session_state:
     st.session_state.i = 0
-
-if "selected" not in st.session_state:
-    st.session_state.selected = None
-
-if "submitted" not in st.session_state:
-    st.session_state.submitted = False
 
 i = st.session_state.i
 total = len(st.session_state.order)
 
 # -----------------------------
-# RESET SELECTION PER QUESTION
-# -----------------------------
-
-if "last_i" not in st.session_state:
-    st.session_state.last_i = -1
-
-if st.session_state.last_i != i:
-    st.session_state.selected = None
-    st.session_state.submitted = False
-    st.session_state.last_i = i
-
-# -----------------------------
-# PROGRESS
+# SIDEBAR PROGRESS
 # -----------------------------
 
 st.sidebar.header("Progress")
-st.sidebar.progress(i / total)
-st.sidebar.write(f"{i} / {total}")
 
-if st.sidebar.button("Reset"):
+st.sidebar.progress(i / total if total > 0 else 1)
+st.sidebar.write(f"{i} / {total} completed")
+
+if st.sidebar.button("Reset session"):
     st.session_state.i = 0
-    st.session_state.selected = None
-    st.session_state.submitted = False
-    st.session_state.order = random.sample(keywords, len(keywords))
+    random.shuffle(st.session_state.order)
     st.rerun()
 
 # -----------------------------
@@ -153,11 +106,15 @@ if st.sidebar.button("Reset"):
 # -----------------------------
 
 if i >= total:
-    st.success("🎉 Finished!")
+    st.success("🎉 You completed the classification!")
+
+    if os.path.exists("results.csv"):
+        st.dataframe(pd.read_csv("results.csv"))
+
     st.stop()
 
 # -----------------------------
-# QUESTION
+# CURRENT KEYWORD
 # -----------------------------
 
 keyword = st.session_state.order[i]
@@ -167,54 +124,57 @@ st.markdown(f"### **{keyword}**")
 
 st.divider()
 
-st.markdown("## Choose competence")
+st.markdown("## Choose the best matching competence")
 
 # -----------------------------
-# SELECTION UI
+# CARD STYLE SELECTION UI
 # -----------------------------
+
+selected = None
 
 for comp, desc in competences.items():
-    col1, col2 = st.columns([1, 6])
+    with st.container():
+        col1, col2 = st.columns([1, 6])
 
-    with col1:
-        if st.button("Select", key=f"{comp}_{i}"):
-            st.session_state.selected = comp
-            st.session_state.submitted = False
+        with col1:
+            if st.button("Select", key=comp):
+                selected = comp
 
-    with col2:
-        st.markdown(f"### {comp}")
-        st.caption(desc)
+        with col2:
+            st.markdown(f"### {comp}")
+            st.markdown(f"<span style='color:gray'>{desc}</span>", unsafe_allow_html=True)
 
 st.divider()
 
 # -----------------------------
-# NOT SURE
+# NOT SURE OPTION
 # -----------------------------
 
 if st.button("🤷 I’m not sure"):
-    st.session_state.selected = "unknown"
-    st.session_state.submitted = False
+    selected = "unknown"
 
 # -----------------------------
-# SUBMIT (FIXED FLOW)
+# SUBMIT
 # -----------------------------
 
-if st.session_state.selected and not st.session_state.submitted:
+if selected:
+    row = pd.DataFrame([[keyword, selected]], columns=["keyword", "assigned"])
 
-    if st.button("Submit answer"):
+    if os.path.exists("results.csv"):
+        old = pd.read_csv("results.csv")
+        df = pd.concat([old, row], ignore_index=True)
+    else:
+        df = row
 
-        try:
-            supabase.table("responses").insert({
-                "participant_id": st.session_state.participant_id,
-                "keyword": keyword,
-                "assigned": st.session_state.selected
-            }).execute()
+    df.to_csv("results.csv", index=False)
 
-            st.session_state.submitted = True
-            st.session_state.i += 1
-            st.session_state.selected = None
+    st.session_state.i += 1
+    st.rerun()
 
-            st.rerun()
+# -----------------------------
+# DEBUG (optional)
+# -----------------------------
 
-        except Exception as e:
-            st.error(f"Error saving to Supabase: {e}")
+with st.expander("View raw data"):
+    if os.path.exists("results.csv"):
+        st.dataframe(pd.read_csv("results.csv"))
